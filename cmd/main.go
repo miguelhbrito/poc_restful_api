@@ -1,10 +1,17 @@
 package main
 
 import (
-    "fmt"
-    "net/http"
+	"fmt"
+	"net/http"
 
 	db "github.com/stone_assignment/db_connect"
+	"github.com/stone_assignment/migrations"
+	"github.com/stone_assignment/pkg/accounts"
+	"github.com/stone_assignment/pkg/login"
+	"github.com/stone_assignment/pkg/middleware"
+
+	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -13,14 +20,15 @@ func main() {
 	migrations.InitMigrations(dbconnection)
 	defer dbconnection.Close()
 
-	addrHttp := fmt.Sprintf(":%d", 5000)
+	router := mux.NewRouter()
 
-    http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "Welcome to my website!")
-    })
+	addrHttp := fmt.Sprintf(":%d", 3000)
 
-    fs := http.FileServer(http.Dir("static/"))git st
-    http.Handle("/static/", http.StripPrefix("/static/", fs))
+	router.HandleFunc("/accounts", middleware.Authorization(accounts.CreateAccountsHandler)).Methods("POST")
+	router.HandleFunc("/accounts", middleware.Authorization(accounts.ListAccountsHandler)).Methods("GET")
+	router.HandleFunc("/accounts/{account_id}/balance", middleware.Authorization(accounts.ListAccountsHandler)).Methods("GET")
 
-    http.ListenAndServe(":80", nil)
+	router.HandleFunc("/login", middleware.Authorization(login.LoginHandler)).Methods("POST")
+
+	log.Fatal().Err(http.ListenAndServe(addrHttp, router)).Msg("failed to start gateway")
 }

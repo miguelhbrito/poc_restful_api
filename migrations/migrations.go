@@ -8,7 +8,6 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"fmt"
-	"os"
 )
 
 func InitMigrations(db *sql.DB) {
@@ -16,12 +15,20 @@ func InitMigrations(db *sql.DB) {
 	if err != nil {
 		panic(err)
 	}
-	pwd, err := os.Getwd()
+
+	//linux users :
+	/*pwd, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
 	m, err := migrate.NewWithDatabaseInstance(
 		fmt.Sprintf("file://%s", pwd),
+		"postgres", driver)
+	*/
+
+	//only for windows
+	m, err := migrate.NewWithDatabaseInstance(
+		fmt.Sprintf("file://C:/Users/migue/Documents/dev/github/stone_assignment/migrations/"),
 		"postgres", driver)
 
 	m.Down()
