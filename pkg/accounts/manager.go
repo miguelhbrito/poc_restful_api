@@ -1,7 +1,10 @@
 package accounts
 
 import (
+	"errors"
+
 	"github.com/stone_assignment/pkg/api/entity"
+	"github.com/stone_assignment/pkg/auth"
 	"github.com/stone_assignment/pkg/mcontext"
 	"github.com/stone_assignment/pkg/storage"
 )
@@ -11,6 +14,12 @@ type Manager struct {
 }
 
 func (m Manager) Create(mctx mcontext.Context, ac entity.Account) error {
+	newPassword, err := auth.GenerateHashPassword(ac.Secret)
+	if err != nil {
+		return errors.New("error in password hash")
+	}
+	ac.Secret = newPassword
+	ac.Balance = initialAmmount
 	return m.accountStorage.SaveAccount(mctx, ac)
 }
 

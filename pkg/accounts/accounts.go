@@ -5,6 +5,10 @@ import (
 	"github.com/stone_assignment/pkg/mcontext"
 )
 
+const (
+	initialAmmount = 100.00
+)
+
 type AccountManager interface {
 	Create(mctx mcontext.Context, ac entity.Account) error
 	GetById(mctx mcontext.Context, id string) (entity.Account, error)

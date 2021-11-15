@@ -1,5 +1,6 @@
 package response
 
 type LoginToken struct {
-	Token string `json:"token"`
+	Token   string `json:"token"`
+	ExpTime string `json:"expTime"`
 }

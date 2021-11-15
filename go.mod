@@ -15,4 +15,5 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/rs/zerolog v1.26.0
 	go.uber.org/atomic v1.6.0 // indirect
+	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
 )

@@ -25,13 +25,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	loginManager := Manager{}
 	token, err := loginManager.LoginIntoSystem(mctx, loginEntity)
 	if err != nil {
-		mlog.Error(mctx).Msgf("Error to login into system")
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		mlog.Error(mctx).Msgf("Error to login into system err %v", err)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(loginEntity.Response(token))
+	json.NewEncoder(w).Encode(token)
 	return
 }

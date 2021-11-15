@@ -1,17 +1,17 @@
 package login
 
 import (
+	"errors"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/mcontext"
 )
 
-var JwtKey = []byte("my_secret_key")
-
-var users = map[string]string{
-	"11815458623": "mithrandir",
-	"12345678910": "gandalf",
-}
+var (
+	JwtKey                 = []byte("my_secret_key")
+	errUserOrPassIncorrect = errors.New("Username or Password is incorrect")
+)
 
 type Claims struct {
 	Cpf string `json:"cpf"`

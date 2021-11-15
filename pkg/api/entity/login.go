@@ -7,8 +7,9 @@ type LoginEntity struct {
 	Secret string `json:"secret`
 }
 
-func (l LoginEntity) Response(token string) response.LoginToken {
+func (l LoginEntity) Response(token, expTime string) response.LoginToken {
 	return response.LoginToken{
-		Token: token,
+		Token:   token,
+		ExpTime: expTime,
 	}
 }

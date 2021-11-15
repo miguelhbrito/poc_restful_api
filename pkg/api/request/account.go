@@ -8,9 +8,9 @@ import (
 )
 
 type CreateAccount struct {
-	Name    string  `json:"name"`
-	Cpf     string  `json:"cpf"`
-	Balance float64 `json:"balance"`
+	Name     string `json:"name"`
+	Cpf      string `json:"cpf"`
+	Password string `json:"password"`
 }
 
 func (c CreateAccount) GenerateEntity() entity.Account {
@@ -18,7 +18,7 @@ func (c CreateAccount) GenerateEntity() entity.Account {
 		Id:        uuid.New().String(),
 		Name:      c.Name,
 		Cpf:       c.Cpf,
-		Balance:   c.Balance,
+		Secret:    c.Password,
 		CreatedAt: time.Now(),
 	}
 }

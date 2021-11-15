@@ -1,23 +1,29 @@
 package login
 
 import (
-	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/stone_assignment/pkg/api/entity"
+	"github.com/stone_assignment/pkg/api/response"
+	"github.com/stone_assignment/pkg/auth"
 	"github.com/stone_assignment/pkg/mcontext"
 	"github.com/stone_assignment/pkg/storage"
 )
 
 type Manager struct {
-	loginManager storage.LoginPostgres
+	loginManager storage.AccountPostgres
 }
 
-func (m Manager) LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (string, error) {
-	expectedPassword, ok := users[l.Cpf]
-	if !ok || expectedPassword != l.Secret {
-		return "", errors.New("User is not authorized")
+func (m Manager) LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (response.LoginToken, error) {
+	lr, err := m.loginManager.GetCredentials(mctx, l.Cpf)
+	if err != nil {
+		return response.LoginToken{}, err
+	}
+
+	check := auth.CheckPasswordHash(l.Secret, lr.Secret)
+	if !check {
+		return response.LoginToken{}, errUserOrPassIncorrect
 	}
 
 	expirationTime := time.Now().Add(1 * time.Hour)
@@ -32,12 +38,13 @@ func (m Manager) LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (s
 
 	tokenString, err := token.SignedString(JwtKey)
 	if err != nil {
-		return "", err
+		return response.LoginToken{}, err
 	}
 
-	if err := m.loginManager.SaveLogin(mctx, entity.LoginEntity{Cpf: l.Cpf, Secret: tokenString}); err != nil {
-		return "", err
+	tokenResponse := response.LoginToken{
+		Token:   tokenString,
+		ExpTime: expirationTime.String(),
 	}
 
-	return tokenString, err
+	return tokenResponse, err
 }

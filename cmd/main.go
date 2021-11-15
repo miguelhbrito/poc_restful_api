@@ -9,6 +9,7 @@ import (
 	"github.com/stone_assignment/pkg/accounts"
 	"github.com/stone_assignment/pkg/login"
 	"github.com/stone_assignment/pkg/middleware"
+	"github.com/stone_assignment/pkg/transfer"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
@@ -21,7 +22,6 @@ func main() {
 	defer dbconnection.Close()
 
 	router := mux.NewRouter()
-
 	addrHttp := fmt.Sprintf(":%d", 3000)
 
 	router.HandleFunc("/accounts", middleware.Authorization(accounts.CreateAccountsHandler)).Methods("POST")
@@ -29,6 +29,9 @@ func main() {
 	router.HandleFunc("/accounts/{account_id}/balance", middleware.Authorization(accounts.ListAccountsHandler)).Methods("GET")
 
 	router.HandleFunc("/login", middleware.Authorization(login.LoginHandler)).Methods("POST")
+
+	router.HandleFunc("/transfers", middleware.Authorization(transfer.CreateTransfersHandler)).Methods("POST")
+	router.HandleFunc("/transfers", middleware.Authorization(transfer.ListTransfersHandler)).Methods("GET")
 
 	log.Fatal().Err(http.ListenAndServe(addrHttp, router)).Msg("failed to start gateway")
 }

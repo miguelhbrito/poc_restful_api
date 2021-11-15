@@ -1,4 +1,4 @@
-package accounts
+package transfer
 
 import (
 	"encoding/json"
@@ -9,11 +9,11 @@ import (
 	"github.com/stone_assignment/pkg/mlog"
 )
 
-func CreateAccountsHandler(w http.ResponseWriter, r *http.Request) {
+func CreateTransfersHandler(w http.ResponseWriter, r *http.Request) {
 	mctx := mcontext.NewFrom(r.Context())
-	mlog.Debug(mctx).Msg("receive request to create account")
+	mlog.Debug(mctx).Msg("receive request to create a transfer")
 
-	var req request.CreateAccount
+	var req request.Transfer
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		mlog.Error(mctx).Msgf("Error to decode from json")
@@ -21,18 +21,18 @@ func CreateAccountsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accountEntity := req.GenerateEntity()
-	accountsManager := Manager{}
-	err = accountsManager.Create(mctx, accountEntity)
+	transferEntity := req.GenerateEntity()
+	transferManager := Manager{}
+	transfer, err := transferManager.Create(mctx, transferEntity)
 	if err != nil {
-		mlog.Error(mctx).Msgf("Error to create new account err: %v", err)
+		mlog.Error(mctx).Msgf("Error to create new transfer, err: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(accountEntity.Response())
+	json.NewEncoder(w).Encode(transfer.Response())
 
 	return
 }
