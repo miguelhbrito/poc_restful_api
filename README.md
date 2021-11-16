@@ -8,7 +8,7 @@ To install golang just follow the steps from website:
 - https://golang.org/doc/install
 
 Install docker and docker-compose:
-- https://docs.docker.com/engine/install/ubuntu/
+- https://docs.docker.com/engine/install/
 - https://docs.docker.com/compose/install/
 
 To install postman just follow the steps from website:
