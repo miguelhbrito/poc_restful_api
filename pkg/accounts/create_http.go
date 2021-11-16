@@ -22,6 +22,12 @@ func CreateAccountsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = req.Validate()
+	if err != nil {
+		mlog.Error(mctx).Err(err).Msg("Error to validate fields from account")
+		merrors.Handler(mctx, w, 400, err)
+	}
+
 	accountEntity := req.GenerateEntity()
 	accountsManager := Manager{}
 	accountResult, err := accountsManager.Create(mctx, accountEntity)

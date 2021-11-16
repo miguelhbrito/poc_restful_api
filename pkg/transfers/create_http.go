@@ -14,12 +14,18 @@ func CreateTransfersHandler(w http.ResponseWriter, r *http.Request) {
 	mctx := mcontext.NewFrom(r.Context())
 	mlog.Debug(mctx).Msg("receive request to create a transfer")
 
-	var req request.Transfer
+	var req request.TransferRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		mlog.Error(mctx).Err(err).Msg("Error to decode from json")
 		merrors.Handler(mctx, w, 500, err)
 		return
+	}
+
+	err = req.Validate()
+	if err != nil {
+		mlog.Error(mctx).Err(err).Msg("Error to validate fields from transfer")
+		merrors.Handler(mctx, w, 400, err)
 	}
 
 	transferEntity := req.GenerateEntity()

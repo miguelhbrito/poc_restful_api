@@ -1,6 +1,7 @@
 package request
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,4 +22,21 @@ func (c CreateAccount) GenerateEntity() entity.Account {
 		Secret:    c.Password,
 		CreatedAt: time.Now(),
 	}
+}
+
+func (c CreateAccount) Validate() error {
+	var errs = ""
+	if c.Name == "" {
+		errs += "name is required"
+	}
+	if c.Cpf == "" {
+		errs += ",cpf is required,"
+	}
+	if c.Password == "" {
+		errs += ",password can not be nil"
+	}
+	if len(errs) > 0 {
+		return errors.New(errs)
+	}
+	return nil
 }

@@ -22,6 +22,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = req.Validate()
+	if err != nil {
+		mlog.Error(mctx).Err(err).Msg("Error to validate fields from login")
+		merrors.Handler(mctx, w, 400, err)
+	}
+
 	loginEntity := req.GenerateEntity()
 	loginManager := Manager{}
 	token, err := loginManager.LoginIntoSystem(mctx, loginEntity)

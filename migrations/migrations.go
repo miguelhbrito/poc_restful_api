@@ -16,7 +16,7 @@ func InitMigrations(db *sql.DB) {
 		panic(err)
 	}
 
-	//linux users :
+	//Linux users :
 	/*pwd, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -26,7 +26,7 @@ func InitMigrations(db *sql.DB) {
 		"postgres", driver)
 	*/
 
-	//only for windows
+	//Windows users :
 	m, err := migrate.NewWithDatabaseInstance(
 		fmt.Sprintf("file://C:/Users/migue/Documents/dev/github/stone_assignment/migrations/"),
 		"postgres", driver)

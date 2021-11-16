@@ -1,6 +1,8 @@
 package request
 
 import (
+	"errors"
+
 	"github.com/stone_assignment/pkg/api/entity"
 )
 
@@ -14,4 +16,18 @@ func (l LoginRequest) GenerateEntity() entity.LoginEntity {
 		Cpf:    l.Cpf,
 		Secret: l.Secret,
 	}
+}
+
+func (l LoginRequest) Validate() error {
+	var errs = ""
+	if l.Cpf == "" {
+		errs += "cpf is required"
+	}
+	if l.Secret == "" {
+		errs += ",secret is required"
+	}
+	if len(errs) > 0 {
+		return errors.New(errs)
+	}
+	return nil
 }

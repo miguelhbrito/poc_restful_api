@@ -17,7 +17,9 @@ import (
 
 func main() {
 
+	//Starting db connection
 	dbconnection := db.InitDB()
+	//Starting migrations
 	migrations.InitMigrations(dbconnection)
 	defer dbconnection.Close()
 
