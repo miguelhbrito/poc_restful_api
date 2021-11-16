@@ -1,4 +1,4 @@
-package transfer
+package transfers
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/stone_assignment/pkg/api/request"
 	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
 	"github.com/stone_assignment/pkg/mlog"
 )
 
@@ -16,8 +17,8 @@ func CreateTransfersHandler(w http.ResponseWriter, r *http.Request) {
 	var req request.Transfer
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		mlog.Error(mctx).Msgf("Error to decode from json")
-		w.WriteHeader(http.StatusInternalServerError)
+		mlog.Error(mctx).Err(err).Msg("Error to decode from json")
+		merrors.Handler(mctx, w, 500, err)
 		return
 	}
 
@@ -25,8 +26,8 @@ func CreateTransfersHandler(w http.ResponseWriter, r *http.Request) {
 	transferManager := Manager{}
 	transfer, err := transferManager.Create(mctx, transferEntity)
 	if err != nil {
-		mlog.Error(mctx).Msgf("Error to create new transfer, err: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		mlog.Error(mctx).Err(err).Msg("Error to create new transfer")
+		merrors.Handler(mctx, w, 500, err)
 		return
 	}
 

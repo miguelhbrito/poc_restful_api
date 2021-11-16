@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS account
     secret_login CHARACTER varying(300),
     balance NUMERIC DEFAULT 0,
     created_at TIMESTAMP NOT NULL,
+    UNIQUE (cpf),
     PRIMARY KEY (id, cpf)
 );
 

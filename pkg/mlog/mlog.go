@@ -18,8 +18,7 @@ const (
 
 type (
 	logInfo struct {
-		trackingId string
-		username   string
+		cpf string
 	}
 )
 
@@ -29,14 +28,9 @@ func buildLog(ctx context.Context, level string) *zerolog.Event {
 	if ctx != nil {
 		li := loadLogInfo(ctx)
 
-		if li.username != "" {
+		if li.cpf != "" {
 			logger = logger.With().
-				Str(string(api.UsernameCtxKey), li.username).Logger()
-		}
-
-		if li.trackingId != "" {
-			logger = logger.With().
-				Str(string(api.TrackingIdCtxKey), li.trackingId).Logger()
+				Str(string(api.CpfCtxKey), li.cpf).Logger()
 		}
 	}
 
@@ -59,11 +53,8 @@ func buildLog(ctx context.Context, level string) *zerolog.Event {
 func loadLogInfo(ctx context.Context) logInfo {
 	var li logInfo
 
-	if v := ctx.Value(api.UsernameCtxKey); v != nil {
-		li.username = v.(api.Username).String()
-	}
-	if v := ctx.Value(api.TrackingIdCtxKey); v != nil {
-		li.trackingId = v.(api.TrackingId).String()
+	if v := ctx.Value(api.CpfCtxKey); v != nil {
+		li.cpf = v.(api.Cpf).String()
 	}
 	return li
 }

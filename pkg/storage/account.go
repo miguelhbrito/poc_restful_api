@@ -17,7 +17,7 @@ func (a AccountPostgres) SaveAccount(mctx mcontext.Context, ac entity.Account) e
 	sqlStatement := `INSERT INTO account VALUES ($1, $2, $3, $4, $5, $6)`
 	_, err := db.Exec(sqlStatement, ac.Id, ac.Name, ac.Cpf, ac.Secret, ac.Balance, ac.CreatedAt)
 	if err != nil {
-		mlog.Error(mctx).Err(err).Msgf("Error to insert an new account into db %v", err)
+		mlog.Error(mctx).Err(err).Msgf("Error to insert an new account into db")
 		return err
 	}
 	return nil
@@ -73,7 +73,7 @@ func (a AccountPostgres) ListAccount(mctx mcontext.Context) ([]entity.Account, e
 		var ac entity.Account
 		err := rows.Scan(&ac.Id, &ac.Name, &ac.Cpf, &ac.Secret, &ac.Balance, &ac.CreatedAt)
 		if err != nil {
-			mlog.Error(mctx).Err(err).Msgf("Error to extract result from row, err: %s", err)
+			mlog.Error(mctx).Err(err).Msg("Error to extract result from row")
 		}
 		acs = append(acs, ac)
 	}
@@ -86,7 +86,7 @@ func (a AccountPostgres) DeleteAccount(mctx mcontext.Context, id string) error {
 	sqlStatement := `DELETE FROM notebook WHERE id=$1`
 	_, err := db.Exec(sqlStatement, id)
 	if err != nil {
-		mlog.Error(mctx).Err(err).Msgf("Error to delete account from db %v", err)
+		mlog.Error(mctx).Err(err).Msg("Error to delete account from db")
 		return err
 	}
 	return nil
@@ -98,7 +98,7 @@ func (a AccountPostgres) UpdateAccount(mctx mcontext.Context, ac entity.Account)
 	sqlStatement := `UPDATE account SET balance=$2 WHERE id=$1`
 	_, err := db.Exec(sqlStatement, ac.Id, ac.Balance)
 	if err != nil {
-		mlog.Error(mctx).Err(err).Msgf("Error to update account from db %v", err)
+		mlog.Error(mctx).Err(err).Msg("Error to update account from db")
 		return err
 	}
 	return nil

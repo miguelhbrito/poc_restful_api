@@ -8,6 +8,7 @@ import (
 	"github.com/stone_assignment/pkg/api"
 	"github.com/stone_assignment/pkg/login"
 	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
 	"github.com/stone_assignment/pkg/mlog"
 )
 
@@ -28,14 +29,14 @@ func Authorization(next http.HandlerFunc) http.HandlerFunc {
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 				cpf := claims["cpf"]
+				cpfString := fmt.Sprintf("%s", cpf)
 				mctx = mcontext.WithValue(mctx, "props", claims)
-				mctx = mcontext.WithValue(mctx, api.UsernameCtxKey, cpf)
+				mctx = mcontext.WithValue(mctx, api.CpfCtxKey, api.Cpf(cpfString))
 				mctx = mcontext.WithValue(mctx, api.AuthorizationCtxKey, tokenAuth)
 				next(w, r.WithContext(mctx))
 			} else {
-				fmt.Println(err)
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusUnauthorized)
+				mlog.Error(mctx).Msgf("Error on decode token, err: %v", err)
+				merrors.Handler(mctx, w, 401, err)
 			}
 		} else {
 			next(w, r.WithContext(mctx))

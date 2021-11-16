@@ -9,7 +9,7 @@ import (
 	"github.com/stone_assignment/pkg/accounts"
 	"github.com/stone_assignment/pkg/login"
 	"github.com/stone_assignment/pkg/middleware"
-	"github.com/stone_assignment/pkg/transfer"
+	"github.com/stone_assignment/pkg/transfers"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
@@ -24,14 +24,18 @@ func main() {
 	router := mux.NewRouter()
 	addrHttp := fmt.Sprintf(":%d", 3000)
 
+	//Accounts endpoints
 	router.HandleFunc("/accounts", middleware.Authorization(accounts.CreateAccountsHandler)).Methods("POST")
 	router.HandleFunc("/accounts", middleware.Authorization(accounts.ListAccountsHandler)).Methods("GET")
 	router.HandleFunc("/accounts/{account_id}/balance", middleware.Authorization(accounts.ListAccountsHandler)).Methods("GET")
 
+	//Login endpoints
 	router.HandleFunc("/login", middleware.Authorization(login.LoginHandler)).Methods("POST")
 
-	router.HandleFunc("/transfers", middleware.Authorization(transfer.CreateTransfersHandler)).Methods("POST")
-	router.HandleFunc("/transfers", middleware.Authorization(transfer.ListTransfersHandler)).Methods("GET")
+	//Transfers endpoints
+	router.HandleFunc("/transfers", middleware.Authorization(transfers.CreateTransfersHandler)).Methods("POST")
+	router.HandleFunc("/transfers", middleware.Authorization(transfers.ListTransfersHandler)).Methods("GET")
 
+	//Starting gateway
 	log.Fatal().Err(http.ListenAndServe(addrHttp, router)).Msg("failed to start gateway")
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stone_assignment/pkg/api/request"
 	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
 	"github.com/stone_assignment/pkg/mlog"
 )
 
@@ -16,8 +17,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req request.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		mlog.Error(mctx).Msgf("Error to decode from json")
-		w.WriteHeader(http.StatusInternalServerError)
+		mlog.Error(mctx).Err(err).Msg("Error to decode from json")
+		merrors.Handler(mctx, w, 500, err)
 		return
 	}
 
@@ -25,8 +26,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	loginManager := Manager{}
 	token, err := loginManager.LoginIntoSystem(mctx, loginEntity)
 	if err != nil {
-		mlog.Error(mctx).Msgf("Error to login into system err %v", err)
-		w.WriteHeader(http.StatusUnauthorized)
+		mlog.Error(mctx).Err(err).Msg("Error to login into system")
+		merrors.Handler(mctx, w, 401, err)
 		return
 	}
 

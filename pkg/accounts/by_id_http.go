@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
 	"github.com/stone_assignment/pkg/mlog"
 )
 
@@ -19,8 +20,8 @@ func GetByIdAccountsHandler(w http.ResponseWriter, r *http.Request) {
 	accountsManager := Manager{}
 	ac, err := accountsManager.GetById(mctx, id)
 	if err != nil {
-		mlog.Error(mctx).Msgf("Error to get balance account {%s}", id)
-		w.WriteHeader(http.StatusInternalServerError)
+		mlog.Error(mctx).Err(err).Msgf("Error to get balance account {%s}", id)
+		merrors.Handler(mctx, w, 500, err)
 		return
 	}
 

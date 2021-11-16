@@ -2,20 +2,14 @@ package api
 
 const (
 	AuthorizationCtxKey Context = "authorization"
-	UsernameCtxKey      Context = "username"
-	TrackingIdCtxKey    Context = "trackingId"
+	CpfCtxKey           Context = "cpf"
 )
 
 type (
-	Context    string
-	Username   string
-	TrackingId string
+	Context string
+	Cpf     string
 )
 
-func (u Username) String() string {
-	return string(u)
-}
-
-func (t TrackingId) String() string {
-	return string(t)
+func (c Cpf) String() string {
+	return string(c)
 }

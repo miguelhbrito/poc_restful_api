@@ -9,10 +9,10 @@ import (
 type Account struct {
 	Id        string    `json:"id"`
 	Name      string    `json:"name"`
-	Cpf       string    `json:"Cpf"`
-	Secret    string    `json:"Secret"`
-	Balance   float64   `json:"Balance"`
-	CreatedAt time.Time `json:"CreatedAt"`
+	Cpf       string    `json:"cpf"`
+	Secret    string    `json:"secret"`
+	Balance   float64   `json:"balance"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type Accounts []Account

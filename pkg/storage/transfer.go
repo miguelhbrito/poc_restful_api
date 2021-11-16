@@ -15,7 +15,7 @@ func (t TransferPostgres) SaveTransfer(mctx mcontext.Context, tr entity.Transfer
 	sqlStatement := `INSERT INTO transfer_account VALUES ($1, $2, $3, $4, $5)`
 	_, err := db.Exec(sqlStatement, tr.Id, tr.AccountOriginId, tr.AccountDestId, tr.Ammount, tr.CreatedAt)
 	if err != nil {
-		mlog.Error(mctx).Err(err).Msgf("Error to insert an new transfer into db %v", err)
+		mlog.Error(mctx).Err(err).Msg("Error to insert an new transfer into db")
 		return err
 	}
 	return nil
@@ -35,7 +35,7 @@ func (t TransferPostgres) ListTransfers(mctx mcontext.Context) ([]entity.Transfe
 		var tr entity.Transfer
 		err := rows.Scan(&tr.Id, &tr.AccountOriginId, &tr.AccountDestId, &tr.Ammount, &tr.CreatedAt)
 		if err != nil {
-			mlog.Error(mctx).Err(err).Msgf("Error to extract result from row, err: %s", err)
+			mlog.Error(mctx).Err(err).Msg("Error to extract result from row")
 		}
 		trs = append(trs, tr)
 	}

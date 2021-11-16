@@ -8,7 +8,7 @@ import (
 
 type Context interface {
 	context.Context
-	Username() api.Username
+	Cpf() api.Cpf
 }
 
 type myContext struct {
@@ -27,10 +27,10 @@ func WithValue(ctx Context, key interface{}, val interface{}) Context {
 	return NewFrom(context.WithValue(ctx, key, val))
 }
 
-func (ctx myContext) Username() api.Username {
-	user, ok := ctx.Value(api.UsernameCtxKey).(api.Username)
+func (ctx myContext) Cpf() api.Cpf {
+	user, ok := ctx.Value(api.CpfCtxKey).(api.Cpf)
 	if !ok && user.String() == "" {
 		return ""
 	}
-	return api.Username(user)
+	return api.Cpf(user)
 }

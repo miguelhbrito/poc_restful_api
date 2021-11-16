@@ -43,7 +43,7 @@ func (m Manager) LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (r
 
 	tokenResponse := response.LoginToken{
 		Token:   tokenString,
-		ExpTime: expirationTime.String(),
+		ExpTime: expirationTime.Unix(),
 	}
 
 	return tokenResponse, err
