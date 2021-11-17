@@ -1,6 +1,6 @@
-run-gateway:
+run-server:
 	echo "running the api server"
-	sudo ./scripts/run-server.sh
+	sh scripts/run-server.sh
 config-up:
 	sudo docker-compose up -d
 config-down:

@@ -10,7 +10,8 @@ type Account interface {
 	GetByIdAccount(mctx mcontext.Context, id string) (entity.Account, error)
 	ListAccount(mctx mcontext.Context) ([]entity.Account, error)
 	DeleteAccount(mctx mcontext.Context, id string) error
-	UpdateBalanceAccount(mctx mcontext.Context, balance float64) error
+	UpdateAccount(mctx mcontext.Context, ac entity.Account) error
+	GetCredentials(mctx mcontext.Context, cpf string) (entity.LoginEntity, error)
 }
 
 type Transfer interface {

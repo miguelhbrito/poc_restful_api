@@ -18,17 +18,25 @@ type Manager struct {
 func (m Manager) Create(mctx mcontext.Context, tr entity.Transfer) (entity.Transfer, error) {
 	mlog.Debug(mctx).Msgf("Starting transfers action between two accounts!")
 
+	//Getting account origin
 	accountOrigin, err := m.accountStorage.GetByCpfAccount(mctx, mctx.Cpf().String())
 	if err != nil {
 		return entity.Transfer{}, err
 	}
 	tr.AccountOriginId = accountOrigin.Id
 
+	//Check if it is same account
+	if accountOrigin.Id == tr.AccountDestId {
+		return entity.Transfer{}, errSameAccount
+	}
+
+	//Getting account destination
 	accountDest, err := m.accountStorage.GetByIdAccount(mctx, tr.AccountDestId)
 	if err != nil {
 		return entity.Transfer{}, err
 	}
 
+	//Transfer actions
 	err = m.transferBetweenTwoAccounts(mctx, accountOrigin, accountDest, tr)
 	return tr, nil
 }
@@ -41,34 +49,40 @@ func (m Manager) List(mctx mcontext.Context) (entity.Transfers, error) {
 	return transfers, nil
 }
 
-func (m Manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, destiny entity.Account, tr entity.Transfer) error {
+func (m Manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, destination entity.Account, tr entity.Transfer) error {
+	//Check origin ammount
 	newOriginBalance, err := checkOriginAmmount(origin.Balance, tr.Ammount)
 	if err != nil {
 		return err
 	}
 
+	//Begin tx manager to check if all transfers actions on database was done ok, otherwise none of them will be commited
 	db := dbconnect.InitDB()
 	defer db.Close()
 	tx, err := db.BeginTx(mctx, nil)
 	txc := mcontext.WithValue(mctx, "tx", tx)
 
+	//Update balance on origin account
 	origin.Balance = newOriginBalance
 	err = m.accountStorage.UpdateAccount(txc, origin)
 	if err != nil {
 		return err
 	}
 
-	destiny.Balance = destiny.Balance + tr.Ammount
-	err = m.accountStorage.UpdateAccount(txc, destiny)
+	//Update balance on destination account
+	destination.Balance = destination.Balance + tr.Ammount
+	err = m.accountStorage.UpdateAccount(txc, destination)
 	if err != nil {
 		return err
 	}
 
+	//Save transfer on database
 	err = m.transferStorage.SaveTransfer(txc, tr)
 	if err != nil {
 		return err
 	}
 
+	//Then commit all transactions on database
 	err = tx.Commit()
 	if err != nil {
 		mlog.Error(mctx).Err(err).Msg("Error to commit transfer action")

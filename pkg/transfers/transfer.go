@@ -10,6 +10,7 @@ import (
 var (
 	errBalanceLowerThan0 = errors.New("Origin balance is equal or lower 0")
 	errBalanceCantAffort = errors.New("Origin balance can not affort this ammount")
+	errSameAccount       = errors.New("Origin account can be the same to transfer ammount")
 )
 
 type TransferManager interface {
