@@ -37,7 +37,7 @@ func main() {
 
 	//Starting transfer postgres and manager
 	transferPostgres := storage.NewTransferPostgres()
-	transferManager := transfers.NewManager(transferPostgres, accountPostgres)
+	transferManager := transfers.NewManager(transferPostgres, accountManager)
 
 	//HANDLERS ----------------
 

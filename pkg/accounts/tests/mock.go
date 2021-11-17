@@ -6,11 +6,12 @@ import (
 )
 
 type AccountCustomMock struct {
-	CreateMock  func(mctx mcontext.Context, ac entity.Account) (entity.Account, error)
-	GetByIdMock func(mctx mcontext.Context, id string) (entity.Account, error)
-	ListMock    func(mctx mcontext.Context) (entity.Accounts, error)
-	DeleteMock  func(mctx mcontext.Context, id string) error
-	UpdateMock  func(mctx mcontext.Context, ac entity.Account) error
+	CreateMock   func(mctx mcontext.Context, ac entity.Account) (entity.Account, error)
+	GetByIdMock  func(mctx mcontext.Context, id string) (entity.Account, error)
+	GetByCpfMock func(mctx mcontext.Context, cpf string) (entity.Account, error)
+	ListMock     func(mctx mcontext.Context) (entity.Accounts, error)
+	DeleteMock   func(mctx mcontext.Context, id string) error
+	UpdateMock   func(mctx mcontext.Context, ac entity.Account) error
 }
 
 func (a AccountCustomMock) Create(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
@@ -19,6 +20,10 @@ func (a AccountCustomMock) Create(mctx mcontext.Context, ac entity.Account) (ent
 
 func (a AccountCustomMock) GetById(mctx mcontext.Context, id string) (entity.Account, error) {
 	return a.GetByIdMock(mctx, id)
+}
+
+func (a AccountCustomMock) GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, error) {
+	return a.GetByCpfMock(mctx, cpf)
 }
 
 func (a AccountCustomMock) List(mctx mcontext.Context) (entity.Accounts, error) {

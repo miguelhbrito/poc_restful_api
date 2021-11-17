@@ -18,6 +18,7 @@ var (
 type Account interface {
 	Create(mctx mcontext.Context, ac entity.Account) (entity.Account, error)
 	GetById(mctx mcontext.Context, id string) (entity.Account, error)
+	GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, error)
 	List(mctx mcontext.Context) (entity.Accounts, error)
 	Delete(mctx mcontext.Context, id string) error
 	Update(mctx mcontext.Context, ac entity.Account) error
