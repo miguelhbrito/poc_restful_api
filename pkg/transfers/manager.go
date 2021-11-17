@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	dbconnect "github.com/stone_assignment/db_connect"
+	"github.com/stone_assignment/pkg/accounts"
 	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/mcontext"
 	"github.com/stone_assignment/pkg/mlog"
@@ -12,12 +13,12 @@ import (
 
 type manager struct {
 	transferStorage storage.Transfer
-	accountStorage  storage.Account
+	accountManager  accounts.Account
 }
 
-func NewManager(transferStorage storage.Transfer, accountStorage storage.Account) Transfer {
+func NewManager(transferStorage storage.Transfer, accountManager accounts.Account) Transfer {
 	return manager{
-		accountStorage:  accountStorage,
+		accountManager:  accountManager,
 		transferStorage: transferStorage,
 	}
 }
@@ -26,7 +27,7 @@ func (m manager) Create(mctx mcontext.Context, tr entity.Transfer) (entity.Trans
 	mlog.Debug(mctx).Msgf("Starting transfers action between two accounts!")
 
 	//Getting account origin
-	accountOrigin, err := m.accountStorage.GetByCpfAccount(mctx, mctx.Cpf().String())
+	accountOrigin, err := m.accountManager.GetByCpf(mctx, mctx.Cpf().String())
 	if err != nil {
 		return entity.Transfer{}, err
 	}
@@ -38,7 +39,7 @@ func (m manager) Create(mctx mcontext.Context, tr entity.Transfer) (entity.Trans
 	}
 
 	//Getting account destination
-	accountDest, err := m.accountStorage.GetByIdAccount(mctx, tr.AccountDestId)
+	accountDest, err := m.accountManager.GetById(mctx, tr.AccountDestId)
 	if err != nil {
 		return entity.Transfer{}, err
 	}
@@ -63,6 +64,7 @@ func (m manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, desti
 		return err
 	}
 
+	mlog.Debug(mctx).Msgf("Begin tx manager!")
 	//Begin tx manager to check if all transfers actions on database was done ok, otherwise none of them will be commited
 	db := dbconnect.InitDB()
 	defer db.Close()
@@ -71,14 +73,14 @@ func (m manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, desti
 
 	//Update balance on origin account
 	origin.Balance = newOriginBalance
-	err = m.accountStorage.UpdateAccount(txc, origin)
+	err = m.accountManager.Update(txc, origin)
 	if err != nil {
 		return err
 	}
 
 	//Update balance on destination account
 	destination.Balance = destination.Balance + tr.Ammount
-	err = m.accountStorage.UpdateAccount(txc, destination)
+	err = m.accountManager.Update(txc, destination)
 	if err != nil {
 		return err
 	}

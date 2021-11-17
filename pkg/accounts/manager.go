@@ -43,6 +43,14 @@ func (m manager) GetById(mctx mcontext.Context, id string) (entity.Account, erro
 	return account, nil
 }
 
+func (m manager) GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, error) {
+	account, err := m.accountStorage.GetByCpfAccount(mctx, cpf)
+	if err != nil {
+		return entity.Account{}, err
+	}
+	return account, nil
+}
+
 func (m manager) List(mctx mcontext.Context) (entity.Accounts, error) {
 	accounts, err := m.accountStorage.ListAccount(mctx)
 	if err != nil {
