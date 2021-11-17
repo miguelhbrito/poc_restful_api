@@ -13,11 +13,13 @@ import (
 
 type Manager struct {
 	loginManager storage.Account
+	auth         auth.Auth
 }
 
-func NewManager(loginManager storage.Account) Login {
+func NewManager(loginManager storage.Account, auth auth.Auth) Login {
 	return Manager{
 		loginManager: loginManager,
+		auth:         auth,
 	}
 }
 
@@ -29,7 +31,7 @@ func (m Manager) LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (r
 	}
 
 	//Checking input secretHash with secretHash from database
-	check := auth.CheckPasswordHash(l.Secret, lr.Secret)
+	check := m.auth.CheckPasswordHash(l.Secret, lr.Secret)
 	if !check {
 		return response.LoginToken{}, errUserOrPassIncorrect
 	}

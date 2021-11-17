@@ -7,6 +7,7 @@ import (
 	db "github.com/stone_assignment/db_connect"
 	"github.com/stone_assignment/migrations"
 	"github.com/stone_assignment/pkg/accounts"
+	"github.com/stone_assignment/pkg/auth"
 	"github.com/stone_assignment/pkg/login"
 	"github.com/stone_assignment/pkg/middleware"
 	"github.com/stone_assignment/pkg/storage"
@@ -28,12 +29,15 @@ func main() {
 	router := mux.NewRouter()
 	addrHttp := fmt.Sprintf(":%d", 3000)
 
+	//Auth manager
+	authManager := auth.NewManager()
+
 	//Starting accounts postgres and manager
 	accountPostgres := storage.NewAccountPostgres()
-	accountManager := accounts.NewManager(accountPostgres)
+	accountManager := accounts.NewManager(accountPostgres, authManager)
 
 	//Starting login manager
-	loginManager := login.NewManager(accountPostgres)
+	loginManager := login.NewManager(accountPostgres, authManager)
 
 	//Starting transfer postgres and manager
 	transferPostgres := storage.NewTransferPostgres()

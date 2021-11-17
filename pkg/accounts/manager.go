@@ -9,33 +9,40 @@ import (
 	"github.com/stone_assignment/pkg/storage"
 )
 
-type manager struct {
+type Manager struct {
 	accountStorage storage.Account
+	auth           auth.Auth
 }
 
-func NewManager(accountStorage storage.Account) Account {
-	return manager{
+func NewManager(accountStorage storage.Account, auth auth.Auth) Account {
+	return Manager{
 		accountStorage: accountStorage,
+		auth:           auth,
 	}
 }
 
-func (m manager) Create(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
+func (m Manager) Create(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
 	doc, err := brdocs.NewCpf(ac.Cpf)
 	if err != nil {
 		return entity.Account{}, err
 	}
 	mlog.Debug(mctx).Msgf("Checked validation of cpf {%s}", doc.Format())
 
-	newPassword, err := auth.GenerateHashPassword(ac.Secret)
+	newPassword, err := m.auth.GenerateHashPassword(ac.Secret)
 	if err != nil {
 		return entity.Account{}, errPasswordHash
 	}
+
 	ac.Secret = newPassword
 	ac.Balance = initialAmmount
-	return ac, m.accountStorage.SaveAccount(mctx, ac)
+	err = m.accountStorage.SaveAccount(mctx, ac)
+	if err != nil {
+		return entity.Account{}, err
+	}
+	return ac, nil
 }
 
-func (m manager) GetById(mctx mcontext.Context, id string) (entity.Account, error) {
+func (m Manager) GetById(mctx mcontext.Context, id string) (entity.Account, error) {
 	account, err := m.accountStorage.GetByIdAccount(mctx, id)
 	if err != nil {
 		return entity.Account{}, err
@@ -43,7 +50,7 @@ func (m manager) GetById(mctx mcontext.Context, id string) (entity.Account, erro
 	return account, nil
 }
 
-func (m manager) GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, error) {
+func (m Manager) GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, error) {
 	account, err := m.accountStorage.GetByCpfAccount(mctx, cpf)
 	if err != nil {
 		return entity.Account{}, err
@@ -51,7 +58,7 @@ func (m manager) GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, er
 	return account, nil
 }
 
-func (m manager) List(mctx mcontext.Context) (entity.Accounts, error) {
+func (m Manager) List(mctx mcontext.Context) (entity.Accounts, error) {
 	accounts, err := m.accountStorage.ListAccount(mctx)
 	if err != nil {
 		return nil, err
@@ -59,10 +66,10 @@ func (m manager) List(mctx mcontext.Context) (entity.Accounts, error) {
 	return accounts, nil
 }
 
-func (m manager) Delete(mctx mcontext.Context, id string) error {
+func (m Manager) Delete(mctx mcontext.Context, id string) error {
 	return m.accountStorage.DeleteAccount(mctx, id)
 }
 
-func (m manager) Update(mctx mcontext.Context, ac entity.Account) error {
+func (m Manager) Update(mctx mcontext.Context, ac entity.Account) error {
 	return m.accountStorage.UpdateAccount(mctx, ac)
 }
