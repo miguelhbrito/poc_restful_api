@@ -13,7 +13,7 @@ var (
 	errSameAccount       = errors.New("Origin account can be the same to transfer ammount")
 )
 
-type TransferManager interface {
+type Transfer interface {
 	Create(mctx mcontext.Context, tr entity.Transfer) (entity.Transfer, error)
-	List(mctx mcontext.Context) (entity.Transfer, error)
+	List(mctx mcontext.Context) (entity.Transfers, error)
 }

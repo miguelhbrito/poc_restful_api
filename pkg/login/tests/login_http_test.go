@@ -3,171 +3,122 @@ package login
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	db "github.com/stone_assignment/db_connect"
-	"github.com/stone_assignment/migrations"
-	"github.com/stone_assignment/pkg/accounts"
+	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/api/request"
 	"github.com/stone_assignment/pkg/api/response"
 	"github.com/stone_assignment/pkg/login"
+	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
+	"github.com/stretchr/testify/assert"
 )
 
-func createAccount() response.Account {
-	reqAccount := request.CreateAccount{
-		Name:     "any_name",
-		Cpf:      "96483478593",
-		Password: "password",
+func TestLoginHTPP_Handler(t *testing.T) {
+	tests := []struct {
+		name    string
+		manager login.Login
+		h       login.LoginHTPP
+		body    []byte
+		request request.LoginRequest
+		want    http.HandlerFunc
+	}{
+		{
+			name: "Success",
+			manager: LoginCustomMock{
+				LoginIntoSystemMock: func(mctx mcontext.Context, l entity.LoginEntity) (response.LoginToken, error) {
+					return response.LoginToken{
+						Token:   "any_token",
+						ExpTime: time.Time{}.Unix(),
+					}, nil
+				},
+			},
+			request: request.LoginRequest{
+				Cpf:    "12345678910",
+				Secret: "any_secret",
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(response.LoginToken{
+					Token:   "any_token",
+					ExpTime: time.Time{}.Unix(),
+				})
+			},
+		},
+		{
+			name: "Error to decode json",
+			manager: LoginCustomMock{
+				LoginIntoSystemMock: func(mctx mcontext.Context, l entity.LoginEntity) (response.LoginToken, error) {
+					return response.LoginToken{}, nil
+				},
+			},
+			body: []byte(""),
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: "Error to decode from json, err:EOF"})
+				_, _ = w.Write(data)
+			},
+		},
+		{
+			name: "Error to login into system",
+			manager: LoginCustomMock{
+				LoginIntoSystemMock: func(mctx mcontext.Context, l entity.LoginEntity) (response.LoginToken, error) {
+					return response.LoginToken{}, errors.New("some error")
+				},
+			},
+			request: request.LoginRequest{
+				Cpf:    "12345678910",
+				Secret: "any_secret",
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: "some error"})
+				_, _ = w.Write(data)
+			},
+		},
+		{
+			name: "Error on validate fields",
+			manager: LoginCustomMock{
+				LoginIntoSystemMock: func(mctx mcontext.Context, l entity.LoginEntity) (response.LoginToken, error) {
+					return response.LoginToken{}, nil
+				},
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: "cpf is required,secret is required"})
+				_, _ = w.Write(data)
+			},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := login.NewLoginHTPP(tt.manager)
 
-	body, _ := json.Marshal(reqAccount)
+			body, _ := json.Marshal(tt.request)
+			if tt.body != nil {
+				body = tt.body
+			}
+			req, _ := http.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 
-	reqCreate, err := http.NewRequest("POST", "/accounts", bytes.NewReader(body))
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
+			w := httptest.NewRecorder()
 
-	rrCreate := httptest.NewRecorder()
-	handlerCreate := http.HandlerFunc(accounts.CreateAccountsHandler)
+			tt.want.ServeHTTP(w, req)
 
-	handlerCreate.ServeHTTP(rrCreate, reqCreate)
+			g := httptest.NewRecorder()
 
-	var resp response.Account
-	err = json.NewDecoder(rrCreate.Body).Decode(&resp)
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
-	return resp
-}
+			h.Handler()(g, req)
 
-func TestLoginHandlerWhenEverythingIsOkThenSuccess(t *testing.T) {
+			assert.Equal(t, w.Code, g.Result().StatusCode, fmt.Sprintf("expected status code %v ", w.Code))
 
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	_ = createAccount()
-
-	reqLogin := request.LoginRequest{
-		Cpf:    "96483478593",
-		Secret: "password",
-	}
-
-	body, _ := json.Marshal(reqLogin)
-
-	req, err := http.NewRequest("POST", "/login", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(login.LoginHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 200 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
-	}
-
-	var resp response.LoginToken
-	err = json.NewDecoder(rr.Body).Decode(&resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Check the response body is what we expect.
-	expected := `{` + resp.Token + " " + fmt.Sprint(resp.ExpTime) + `}`
-
-	if fmt.Sprint(resp) != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			fmt.Sprint(resp), expected)
-	}
-}
-
-func TestLoginHandlerWhenInvalidPasswordThenFail(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	_ = createAccount()
-
-	reqLogin := request.LoginRequest{
-		Cpf:    "96483478593",
-		Secret: "not a password",
-	}
-
-	body, _ := json.Marshal(reqLogin)
-
-	req, err := http.NewRequest("POST", "/login", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(login.LoginHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 401 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
-	}
-
-	// Check the response body is what we expect.
-	expected := `{"message":"Username or Password is incorrect"}`
-
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
-	}
-}
-
-func TestLoginHandlerWhenUserNotFoundThenFail(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	reqLogin := request.LoginRequest{
-		Cpf:    "96483478593",
-		Secret: "password",
-	}
-
-	body, _ := json.Marshal(reqLogin)
-
-	req, err := http.NewRequest("POST", "/login", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(login.LoginHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 401 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
-	}
-
-	// Check the response body is what we expect.
-	expected := `{"message":"sql: no rows in result set"}`
-
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
+			assert.Equal(t, w.Body.String(), g.Body.String(), "body was not equal as expected")
+		})
 	}
 }

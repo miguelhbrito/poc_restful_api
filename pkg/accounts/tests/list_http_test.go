@@ -1,44 +1,76 @@
 package accounts
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	db "github.com/stone_assignment/db_connect"
-	"github.com/stone_assignment/migrations"
 	"github.com/stone_assignment/pkg/accounts"
+	"github.com/stone_assignment/pkg/api/entity"
+	"github.com/stone_assignment/pkg/api/response"
+	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestListAccountsHandlerWhenEverythingIsOkThenSuccess(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	req, err := http.NewRequest("GET", "/accounts", nil)
-	if err != nil {
-		t.Fatal(err)
+func Test_listAccountsHTPP_Handler(t *testing.T) {
+	tests := []struct {
+		name    string
+		manager accounts.Account
+		h       accounts.ListAccountsHTPP
+		want    http.HandlerFunc
+	}{
+		{
+			name: "Success",
+			manager: AccountCustomMock{
+				ListMock: func(mctx mcontext.Context) (entity.Accounts, error) {
+					return entity.Accounts{{Id: "any_id"}}, nil
+				},
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode([]response.Account{{
+					Id:        "any_id",
+					CreatedAt: time.Time{}.String(),
+				}})
+			},
+		},
+		{
+			name: "Error to list all accounts",
+			manager: AccountCustomMock{
+				ListMock: func(mctx mcontext.Context) (entity.Accounts, error) {
+					return nil, errors.New("some error")
+				},
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: errors.New("some error").Error()})
+				_, _ = w.Write(data)
+			},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := accounts.NewListAccountsHTPP(tt.manager)
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(accounts.ListAccountsHandler)
+			r, _ := http.NewRequest(http.MethodGet, "/accounts", nil)
 
-	handler.ServeHTTP(rr, req)
+			w := httptest.NewRecorder()
 
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 200 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
-	}
+			tt.want.ServeHTTP(w, r)
 
-	// Check the response body is what we expect.
-	expected := "[]\n"
+			g := httptest.NewRecorder()
 
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
+			h.Handler()(g, r)
+
+			assert.Equal(t, w.Code, g.Result().StatusCode, fmt.Sprintf("expected status code %v ", w.Code))
+
+			assert.Equal(t, w.Body.String(), g.Body.String(), "body was not equal as expected")
+		})
 	}
 }

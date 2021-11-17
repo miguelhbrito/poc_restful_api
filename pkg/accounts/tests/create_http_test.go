@@ -3,180 +3,127 @@ package accounts
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	db "github.com/stone_assignment/db_connect"
-	"github.com/stone_assignment/migrations"
 	"github.com/stone_assignment/pkg/accounts"
+	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/api/request"
 	"github.com/stone_assignment/pkg/api/response"
+	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateAccountsHandlerWhenEverythingIsOkThenSuccess(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	reqAccount := request.CreateAccount{
-		Name:     "any_name",
-		Cpf:      "96483478593",
-		Password: "password",
+func Test_createAccountHTPP_Handler(t *testing.T) {
+	tests := []struct {
+		manager accounts.Account
+		name    string
+		h       accounts.CreateAccountHTPP
+		body    []byte
+		request request.CreateAccount
+		want    http.HandlerFunc
+	}{
+		{
+			name: "Success",
+			manager: AccountCustomMock{CreateMock: func(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
+				return entity.Account{
+					Id:        "any_id",
+					Name:      "any_name",
+					Cpf:       "96483478593",
+					Secret:    "any_secret",
+					Balance:   1,
+					CreatedAt: time.Time{},
+				}, nil
+			},
+			},
+			request: request.CreateAccount{
+				Name:     "any_name",
+				Cpf:      "96483478593",
+				Password: "any_secret",
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusCreated)
+				_ = json.NewEncoder(w).Encode(response.Account{
+					Id:        "any_id",
+					Name:      "any_name",
+					Cpf:       "96483478593",
+					Balance:   1,
+					CreatedAt: time.Time{}.String(),
+				})
+			},
+		},
+		{
+			name: "Error to create a new account",
+			manager: AccountCustomMock{CreateMock: func(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
+				return entity.Account{}, errors.New("some error")
+			},
+			},
+			request: request.CreateAccount{
+				Name:     "any_name",
+				Cpf:      "96483478593",
+				Password: "any_secret",
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: errors.New("some error").Error()})
+				_, _ = w.Write(data)
+			},
+		},
+		{
+			name: "Error to validate fields",
+			manager: AccountCustomMock{CreateMock: func(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
+				return entity.Account{}, nil
+			},
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: "name is required,cpf is required,,password can not be nil"})
+				_, _ = w.Write(data)
+			},
+		},
+		{
+			name: "Error to decode json",
+			manager: AccountCustomMock{CreateMock: func(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
+				return entity.Account{}, nil
+			},
+			},
+			body: []byte(""),
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: "Error to decode from json, err:EOF"})
+				_, _ = w.Write(data)
+			},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := accounts.NewCreateAccountHTPP(tt.manager)
 
-	body, _ := json.Marshal(reqAccount)
+			body, _ := json.Marshal(tt.request)
+			if tt.body != nil {
+				body = tt.body
+			}
+			req, _ := http.NewRequest(http.MethodPost, "/accounts", bytes.NewReader(body))
 
-	req, err := http.NewRequest("POST", "/accounts", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
+			w := httptest.NewRecorder()
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(accounts.CreateAccountsHandler)
+			tt.want.ServeHTTP(w, req)
 
-	handler.ServeHTTP(rr, req)
+			g := httptest.NewRecorder()
 
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 201 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
-	}
+			h.Handler()(g, req)
 
-	var resp response.Account
-	err = json.NewDecoder(rr.Body).Decode(&resp)
-	if err != nil {
-		t.Fatal(err)
-	}
+			assert.Equal(t, w.Code, g.Result().StatusCode, fmt.Sprintf("expected status code %v ", w.Code))
 
-	// Check the response body is what we expect.
-	expected := `{` + resp.Id + ` any_name 96483478593 100 ` + resp.CreatedAt + `}`
-
-	if fmt.Sprint(resp) != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			fmt.Sprint(resp), expected)
-	}
-}
-
-func TestCreateAccountsHandlerWhenInvalidCpfThenFail(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	reqAccount := request.CreateAccount{
-		Name:     "any_name",
-		Cpf:      "12345678910",
-		Password: "password",
-	}
-
-	body, _ := json.Marshal(reqAccount)
-
-	req, err := http.NewRequest("POST", "/accounts", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(accounts.CreateAccountsHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 500 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusInternalServerError)
-	}
-
-	// Check the response body is what we expect.
-	expected := `{"message":"Cpf(12345678910) is invalid"}`
-
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
-	}
-}
-
-func TestCreateAccountsHandlerWhenMissingInputsThenFail(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	reqAccount := request.CreateAccount{
-		Name:     "",
-		Cpf:      "",
-		Password: "",
-	}
-
-	body, _ := json.Marshal(reqAccount)
-
-	req, err := http.NewRequest("POST", "/accounts", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(accounts.CreateAccountsHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 400 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusBadRequest)
-	}
-
-	// Check the response body is what we expect.
-	expected := `{"message":"name is required,cpf is required,,password can not be nil"}{"message":"Cpf must not be empty"}`
-
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
+			assert.Equal(t, w.Body.String(), g.Body.String(), "body was not equal as expected")
+		})
 	}
 }
-
-func TestCreateAccountsHandlerWhenMissingBodyThenFail(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	body, _ := json.Marshal(".")
-
-	req, err := http.NewRequest("POST", "/accounts", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(accounts.CreateAccountsHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 500 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusInternalServerError)
-	}
-
-	// Check the response body is what we expect.
-	expected := `{"message":"json: cannot unmarshal string into Go value of type request.CreateAccount"}`
-
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
-	}
-}
-
-

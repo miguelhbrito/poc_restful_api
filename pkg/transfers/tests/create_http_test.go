@@ -3,124 +3,121 @@ package transfers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	db "github.com/stone_assignment/db_connect"
-	"github.com/stone_assignment/migrations"
-	"github.com/stone_assignment/pkg/accounts"
+	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/api/request"
 	"github.com/stone_assignment/pkg/api/response"
-	"github.com/stone_assignment/pkg/login"
+	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
 	"github.com/stone_assignment/pkg/transfers"
+	"github.com/stretchr/testify/assert"
 )
 
-func createAccount(cpf string) response.Account {
-	reqAccount := request.CreateAccount{
-		Name:     "any_name",
-		Cpf:      cpf,
-		Password: "password",
+func TestCreateTransferHTPP_Handler(t *testing.T) {
+	tests := []struct {
+		name    string
+		manager transfers.Transfer
+		h       transfers.CreateTransferHTPP
+		body    []byte
+		request request.TransferRequest
+		want    http.HandlerFunc
+	}{
+		{
+			name: "Success",
+			manager: TransferCustomMock{
+				CreateMock: func(mctx mcontext.Context, tr entity.Transfer) (entity.Transfer, error) {
+					return entity.Transfer{
+						Id:        "any_id",
+						CreatedAt: time.Time{},
+					}, nil
+				},
+			},
+			request: request.TransferRequest{
+				AccountDestId: "any_id",
+				Ammount:       10.50,
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusCreated)
+				_ = json.NewEncoder(w).Encode(response.Transfer{
+					Id:        "any_id",
+					CreatedAt: time.Time{},
+				})
+			},
+		},
+		{
+			name: "Error to decode json",
+			manager: TransferCustomMock{
+				CreateMock: func(mctx mcontext.Context, tr entity.Transfer) (entity.Transfer, error) {
+					return entity.Transfer{}, nil
+				},
+			},
+			body: []byte(""),
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: "Error to decode from json, err:EOF"})
+				_, _ = w.Write(data)
+			},
+		},
+		{
+			name: "Error to validate fields",
+			manager: TransferCustomMock{
+				CreateMock: func(mctx mcontext.Context, tr entity.Transfer) (entity.Transfer, error) {
+					return entity.Transfer{}, nil
+				},
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: "account destination id is required,ammount to be transfer need to be greater than 0"})
+				_, _ = w.Write(data)
+			},
+		},
+		{
+			name: "Error on save tranfers into database",
+			manager: TransferCustomMock{
+				CreateMock: func(mctx mcontext.Context, tr entity.Transfer) (entity.Transfer, error) {
+					return entity.Transfer{}, errors.New("some error")
+				},
+			},
+			request: request.TransferRequest{
+				AccountDestId: "any_id",
+				Ammount:       10.50,
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: errors.New("some error").Error()})
+				_, _ = w.Write(data)
+			},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := transfers.NewCreateTransferHTPP(tt.manager)
 
-	body, _ := json.Marshal(reqAccount)
+			body, _ := json.Marshal(tt.request)
+			if tt.body != nil {
+				body = tt.body
+			}
+			req, _ := http.NewRequest(http.MethodPost, "/transfers", bytes.NewReader(body))
 
-	reqCreate, err := http.NewRequest("POST", "/accounts", bytes.NewReader(body))
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
+			w := httptest.NewRecorder()
 
-	rrCreate := httptest.NewRecorder()
-	handlerCreate := http.HandlerFunc(accounts.CreateAccountsHandler)
+			tt.want.ServeHTTP(w, req)
 
-	handlerCreate.ServeHTTP(rrCreate, reqCreate)
+			g := httptest.NewRecorder()
 
-	var resp response.Account
-	err = json.NewDecoder(rrCreate.Body).Decode(&resp)
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
-	return resp
-}
+			h.Handler()(g, req)
 
-func createLogin() response.LoginToken {
-	reqLogin := request.LoginRequest{
-		Cpf:    "96483478593",
-		Secret: "password",
-	}
+			assert.Equal(t, w.Code, g.Result().StatusCode, fmt.Sprintf("expected status code %v ", w.Code))
 
-	body, _ := json.Marshal(reqLogin)
-
-	req, err := http.NewRequest("POST", "/login", bytes.NewReader(body))
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(login.LoginHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	var resp response.LoginToken
-	err = json.NewDecoder(rr.Body).Decode(&resp)
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
-
-	return resp
-}
-
-func TestCreateTransfersHandlerWhenEverythingIsOkThenSuccess(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	_ = createAccount("96483478593")
-	resp := createAccount("58847923603")
-
-	token := createLogin()
-
-	reqTransfer := request.TransferRequest{
-		AccountDestId: resp.Id,
-		Ammount:       20.50,
-	}
-
-	body, _ := json.Marshal(reqTransfer)
-
-	req, err := http.NewRequest("POST", "/transfers", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Set("authorization", token.Token)
-
-	fmt.Println(req)
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(transfers.CreateTransfersHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 201 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
-	}
-
-	fmt.Println(rr.Body.String())
-	var respTransfer response.Transfer
-	err = json.NewDecoder(rr.Body).Decode(&respTransfer)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Check the response body is what we expect.
-	expected := `{}`
-
-	if fmt.Sprint(respTransfer) != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			fmt.Sprint(respTransfer), expected)
+			assert.Equal(t, w.Body.String(), g.Body.String(), "body was not equal as expected")
+		})
 	}
 }

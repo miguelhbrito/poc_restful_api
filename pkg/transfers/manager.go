@@ -10,12 +10,19 @@ import (
 	"github.com/stone_assignment/pkg/storage"
 )
 
-type Manager struct {
-	transferStorage storage.TransferPostgres
-	accountStorage  storage.AccountPostgres
+type manager struct {
+	transferStorage storage.Transfer
+	accountStorage  storage.Account
 }
 
-func (m Manager) Create(mctx mcontext.Context, tr entity.Transfer) (entity.Transfer, error) {
+func NewManager(transferStorage storage.Transfer, accountStorage storage.Account) Transfer {
+	return manager{
+		accountStorage:  accountStorage,
+		transferStorage: transferStorage,
+	}
+}
+
+func (m manager) Create(mctx mcontext.Context, tr entity.Transfer) (entity.Transfer, error) {
 	mlog.Debug(mctx).Msgf("Starting transfers action between two accounts!")
 
 	//Getting account origin
@@ -41,7 +48,7 @@ func (m Manager) Create(mctx mcontext.Context, tr entity.Transfer) (entity.Trans
 	return tr, nil
 }
 
-func (m Manager) List(mctx mcontext.Context) (entity.Transfers, error) {
+func (m manager) List(mctx mcontext.Context) (entity.Transfers, error) {
 	transfers, err := m.transferStorage.ListTransfers(mctx)
 	if err != nil {
 		return nil, err
@@ -49,7 +56,7 @@ func (m Manager) List(mctx mcontext.Context) (entity.Transfers, error) {
 	return transfers, nil
 }
 
-func (m Manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, destination entity.Account, tr entity.Transfer) error {
+func (m manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, destination entity.Account, tr entity.Transfer) error {
 	//Check origin ammount
 	newOriginBalance, err := checkOriginAmmount(origin.Balance, tr.Ammount)
 	if err != nil {

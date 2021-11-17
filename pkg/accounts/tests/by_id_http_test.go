@@ -1,125 +1,81 @@
 package accounts
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	"github.com/gorilla/mux"
-	db "github.com/stone_assignment/db_connect"
-	"github.com/stone_assignment/migrations"
 	"github.com/stone_assignment/pkg/accounts"
-	"github.com/stone_assignment/pkg/api/request"
+	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/api/response"
+	"github.com/stone_assignment/pkg/mcontext"
+	"github.com/stone_assignment/pkg/merrors"
+	"github.com/stretchr/testify/assert"
 )
 
-func createAccount() response.Account {
-	reqAccount := request.CreateAccount{
-		Name:     "any_name",
-		Cpf:      "96483478593",
-		Password: "password",
+func TestByIdAccountHTPP_Handler(t *testing.T) {
+	tests := []struct {
+		name      string
+		accountId string
+		manager   accounts.Account
+		h         accounts.ByIdAccountHTPP
+		want      http.HandlerFunc
+	}{
+		{
+			name:      "Success",
+			accountId: "1",
+			manager: AccountCustomMock{
+				GetByIdMock: func(mctx mcontext.Context, id string) (entity.Account, error) {
+					return entity.Account{
+						Id: "any_id",
+					}, nil
+				},
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(response.Account{
+					Id:        "any_id",
+					CreatedAt: time.Time{}.String(),
+				})
+			},
+		},
+		{
+			name:      "Error to get account by Id",
+			accountId: "1",
+			manager: AccountCustomMock{
+				GetByIdMock: func(mctx mcontext.Context, id string) (entity.Account, error) {
+					return entity.Account{}, errors.New("some error")
+				},
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				data, _ := json.Marshal(merrors.HTTPError{Msg: errors.New("some error").Error()})
+				_, _ = w.Write(data)
+			},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := accounts.NewByIdAccountHTPP(tt.manager)
 
-	body, _ := json.Marshal(reqAccount)
+			r, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/accounts/%s", tt.accountId), nil)
 
-	reqCreate, err := http.NewRequest("POST", "/accounts", bytes.NewReader(body))
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
+			w := httptest.NewRecorder()
 
-	rrCreate := httptest.NewRecorder()
-	handlerCreate := http.HandlerFunc(accounts.CreateAccountsHandler)
+			tt.want.ServeHTTP(w, r)
 
-	handlerCreate.ServeHTTP(rrCreate, reqCreate)
+			g := httptest.NewRecorder()
 
-	var resp response.Account
-	err = json.NewDecoder(rrCreate.Body).Decode(&resp)
-	if err != nil {
-		fmt.Errorf(err.Error())
-	}
-	return resp
-}
+			h.Handler()(g, r)
 
-func TestGetByIdAccountsHandlerWhenEverythingIsOkThenSuccess(t *testing.T) {
+			assert.Equal(t, w.Code, g.Result().StatusCode, fmt.Sprintf("expected status code %v ", w.Code))
 
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	//Add an account into system
-	resp := createAccount()
-
-	req, err := http.NewRequest("GET", fmt.Sprintf("/accounts/%s/balance", resp.Id), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(accounts.GetByIdAccountsHandler)
-
-	vars := map[string]string{
-		"account_id": resp.Id,
-	}
-
-	req = mux.SetURLVars(req, vars)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 200 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
-
-	var respCheck response.Account
-	err = json.NewDecoder(rr.Body).Decode(&respCheck)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Check the response body is what we expect.
-	expected := `{` + resp.Id + ` any_name 96483478593 100 ` + respCheck.CreatedAt + `}`
-
-	if fmt.Sprint(respCheck) != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			fmt.Sprint(respCheck), expected)
-	}
-}
-
-func TestGetByIdAccountsHandlerWhenNowFoundAccountThenFail(t *testing.T) {
-
-	//Starting db connection
-	dbconnection := db.InitDB()
-	//Starting migrations
-	migrations.InitMigrations(dbconnection)
-	defer dbconnection.Close()
-
-	req, err := http.NewRequest("GET", "/accounts/"+"123"+"/balance", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(accounts.GetByIdAccountsHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != 200 {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
-
-	// Check the response body is what we expect.
-	expected := "{}\n"
-
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
+			assert.Equal(t, w.Body.String(), g.Body.String(), "body was not equal as expected")
+		})
 	}
 }
