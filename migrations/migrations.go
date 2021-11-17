@@ -21,7 +21,7 @@ func InitMigrations(db *sql.DB) {
 
 	var m *migrate.Migrate
 	if runtime.GOOS == "windows" {
-		fmt.Print("Windows OS detected, please enter project path:")
+		fmt.Print("Windows OS detected, please enter project path(example: C:/Users/username/Documents/dev/github/):")
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
 		text := scanner.Text()
