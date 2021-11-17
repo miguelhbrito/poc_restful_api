@@ -35,7 +35,7 @@ make config-up
 ```
 To stop database server postgresql:
 ``` powershell
-make config-up
+make config-down
 ```
 
 ## 🛠 How to use
