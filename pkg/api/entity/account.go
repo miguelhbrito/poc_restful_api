@@ -23,7 +23,7 @@ func (ac Account) Response() response.Account {
 		Name:      ac.Name,
 		Cpf:       ac.Cpf,
 		Balance:   ac.Balance,
-		CreatedAt: ac.CreatedAt,
+		CreatedAt: ac.CreatedAt.String(),
 	}
 }
 

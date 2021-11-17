@@ -9,6 +9,10 @@ import (
 
 type TransferPostgres struct{}
 
+func NewTransferPostgres() Transfer {
+	return TransferPostgres{}
+}
+
 func (t TransferPostgres) SaveTransfer(mctx mcontext.Context, tr entity.Transfer) error {
 	db := dbconnect.InitDB()
 	defer db.Close()

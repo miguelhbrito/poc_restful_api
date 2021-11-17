@@ -15,7 +15,7 @@ var (
 	errPasswordHash = errors.New("Error to generate password hash")
 )
 
-type AccountManager interface {
+type Account interface {
 	Create(mctx mcontext.Context, ac entity.Account) (entity.Account, error)
 	GetById(mctx mcontext.Context, id string) (entity.Account, error)
 	List(mctx mcontext.Context) (entity.Accounts, error)

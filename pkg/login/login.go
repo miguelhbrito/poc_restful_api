@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/stone_assignment/pkg/api/entity"
+	"github.com/stone_assignment/pkg/api/response"
 	"github.com/stone_assignment/pkg/mcontext"
 )
 
@@ -18,6 +19,6 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-type LoginManager interface {
-	LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (string, error)
+type Login interface {
+	LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (response.LoginToken, error)
 }

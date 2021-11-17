@@ -9,6 +9,7 @@ import (
 	"github.com/stone_assignment/pkg/accounts"
 	"github.com/stone_assignment/pkg/login"
 	"github.com/stone_assignment/pkg/middleware"
+	"github.com/stone_assignment/pkg/storage"
 	"github.com/stone_assignment/pkg/transfers"
 
 	"github.com/gorilla/mux"
@@ -23,20 +24,48 @@ func main() {
 	migrations.InitMigrations(dbconnection)
 	defer dbconnection.Close()
 
+	//Starting rounter
 	router := mux.NewRouter()
 	addrHttp := fmt.Sprintf(":%d", 3000)
 
+	//Starting accounts postgres and manager
+	accountPostgres := storage.NewAccountPostgres()
+	accountManager := accounts.NewManager(accountPostgres)
+
+	//Starting login manager
+	loginManager := login.NewManager(accountPostgres)
+
+	//Starting transfer postgres and manager
+	transferPostgres := storage.NewTransferPostgres()
+	transferManager := transfers.NewManager(transferPostgres, accountPostgres)
+
+	//HANDLERS ----------------
+
+	//Starting accounts handlers
+	accountCreate := accounts.NewCreateAccountHTPP(accountManager)
+	accountList := accounts.NewListAccountsHTPP(accountManager)
+	accountById := accounts.NewByIdAccountHTPP(accountManager)
+
+	//Starting login handlers
+	loginCreate := login.NewLoginHTPP(loginManager)
+
+	//Starting login handlers
+	transferCreate := transfers.NewCreateTransferHTPP(transferManager)
+	transferList := transfers.NewListTransferHTPP(transferManager)
+
+	//ENDPOINTS----------------
+
 	//Accounts endpoints
-	router.HandleFunc("/accounts", middleware.Authorization(accounts.CreateAccountsHandler)).Methods("POST")
-	router.HandleFunc("/accounts", middleware.Authorization(accounts.ListAccountsHandler)).Methods("GET")
-	router.HandleFunc("/accounts/{account_id}/balance", middleware.Authorization(accounts.ListAccountsHandler)).Methods("GET")
+	router.HandleFunc("/accounts", middleware.Authorization(accountCreate.Handler())).Methods("POST")
+	router.HandleFunc("/accounts", middleware.Authorization(accountList.Handler())).Methods("GET")
+	router.HandleFunc("/accounts/{account_id}/balance", middleware.Authorization(accountById.Handler())).Methods("GET")
 
 	//Login endpoints
-	router.HandleFunc("/login", middleware.Authorization(login.LoginHandler)).Methods("POST")
+	router.HandleFunc("/login", middleware.Authorization(loginCreate.Handler())).Methods("POST")
 
 	//Transfers endpoints
-	router.HandleFunc("/transfers", middleware.Authorization(transfers.CreateTransfersHandler)).Methods("POST")
-	router.HandleFunc("/transfers", middleware.Authorization(transfers.ListTransfersHandler)).Methods("GET")
+	router.HandleFunc("/transfers", middleware.Authorization(transferCreate.Handler())).Methods("POST")
+	router.HandleFunc("/transfers", middleware.Authorization(transferList.Handler())).Methods("GET")
 
 	//Starting gateway
 	log.Fatal().Err(http.ListenAndServe(addrHttp, router)).Msg("failed to start gateway")

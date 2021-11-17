@@ -30,7 +30,7 @@ func (c CreateAccount) Validate() error {
 		errs += "name is required"
 	}
 	if c.Cpf == "" {
-		errs += ",cpf is required,"
+		errs += ",cpf is required"
 	}
 	if c.Password == "" {
 		errs += ",password can not be nil"

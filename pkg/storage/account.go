@@ -11,6 +11,10 @@ import (
 
 type AccountPostgres struct{}
 
+func NewAccountPostgres () Account {
+	return AccountPostgres{}
+}
+
 func (a AccountPostgres) SaveAccount(mctx mcontext.Context, ac entity.Account) error {
 	db := dbconnect.InitDB()
 	defer db.Close()
