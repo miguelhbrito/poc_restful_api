@@ -4,28 +4,28 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/stone_assignment/pkg/accounts"
 	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/api/response"
 	"github.com/stone_assignment/pkg/auth"
 	"github.com/stone_assignment/pkg/mcontext"
-	"github.com/stone_assignment/pkg/storage"
 )
 
-type Manager struct {
-	loginManager storage.Account
-	auth         auth.Auth
+type manager struct {
+	accountManager accounts.Account
+	auth           auth.Auth
 }
 
-func NewManager(loginManager storage.Account, auth auth.Auth) Login {
-	return Manager{
-		loginManager: loginManager,
-		auth:         auth,
+func NewManager(accountManager accounts.Account, auth auth.Auth) Login {
+	return manager{
+		accountManager: accountManager,
+		auth:           auth,
 	}
 }
 
-func (m Manager) LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (response.LoginToken, error) {
+func (m manager) LoginIntoSystem(mctx mcontext.Context, l entity.LoginEntity) (response.LoginToken, error) {
 	//Getting credentials from database
-	lr, err := m.loginManager.GetCredentials(mctx, l.Cpf)
+	lr, err := m.accountManager.GetByCpf(mctx, l.Cpf)
 	if err != nil {
 		return response.LoginToken{}, err
 	}

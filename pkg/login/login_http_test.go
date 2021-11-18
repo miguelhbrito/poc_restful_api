@@ -13,7 +13,6 @@ import (
 	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/api/request"
 	"github.com/stone_assignment/pkg/api/response"
-	"github.com/stone_assignment/pkg/login"
 	"github.com/stone_assignment/pkg/mcontext"
 	"github.com/stone_assignment/pkg/merrors"
 	"github.com/stretchr/testify/assert"
@@ -22,8 +21,8 @@ import (
 func TestLoginHTPP_Handler(t *testing.T) {
 	tests := []struct {
 		name    string
-		manager login.Login
-		h       login.LoginHTPP
+		manager Login
+		h       LoginHTPP
 		body    []byte
 		request request.LoginRequest
 		want    http.HandlerFunc
@@ -100,7 +99,7 @@ func TestLoginHTPP_Handler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := login.NewLoginHTPP(tt.manager)
+			h := NewLoginHTPP(tt.manager)
 
 			body, _ := json.Marshal(tt.request)
 			if tt.body != nil {

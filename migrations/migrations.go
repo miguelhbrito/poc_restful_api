@@ -22,25 +22,34 @@ func InitMigrations(db *sql.DB) {
 	var m *migrate.Migrate
 	if runtime.GOOS == "windows" {
 		fmt.Print("Windows OS detected, please enter project path(example: C:/Users/username/Documents/dev/github/):")
+
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
 		text := scanner.Text()
+
 		m, err = migrate.NewWithDatabaseInstance(
 			fmt.Sprintf("file://"+text+"stone_assignment/migrations/"),
 			"postgres", driver)
+		if err != nil {
+			panic(err)
+		}
 
 	} else {
 		pwd, err := os.Getwd()
 		if err != nil {
 			panic(err)
 		}
+
 		m, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", pwd),
+			fmt.Sprintf("file://%s/migrations/", pwd),
 			"postgres", driver)
+		if err != nil {
+			panic(err)
+		}
 	}
 
-	m.Down()
-	m.Up()
+	_ = m.Down()
+	_ = m.Up()
 
 	fmt.Println("Successfully migrations applied!")
 }

@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stone_assignment/pkg/accounts"
 	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/api/response"
 	"github.com/stone_assignment/pkg/mcontext"
@@ -20,8 +19,8 @@ import (
 func Test_listAccountsHTPP_Handler(t *testing.T) {
 	tests := []struct {
 		name    string
-		manager accounts.Account
-		h       accounts.ListAccountsHTPP
+		manager Account
+		h       ListAccountsHTPP
 		want    http.HandlerFunc
 	}{
 		{
@@ -56,7 +55,7 @@ func Test_listAccountsHTPP_Handler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := accounts.NewListAccountsHTPP(tt.manager)
+			h := NewListAccountsHTPP(tt.manager)
 
 			r, _ := http.NewRequest(http.MethodGet, "/accounts", nil)
 

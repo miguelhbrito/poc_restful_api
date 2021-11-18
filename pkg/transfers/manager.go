@@ -45,7 +45,10 @@ func (m manager) Create(mctx mcontext.Context, tr entity.Transfer) (entity.Trans
 	}
 
 	//Transfer actions
-	err = m.transferBetweenTwoAccounts(mctx, accountOrigin, accountDest, tr)
+	err = m.TransferBetweenTwoAccounts(mctx, accountOrigin, accountDest, tr)
+	if err != nil {
+		return entity.Transfer{}, err
+	}
 	return tr, nil
 }
 
@@ -57,9 +60,9 @@ func (m manager) List(mctx mcontext.Context) (entity.Transfers, error) {
 	return transfers, nil
 }
 
-func (m manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, destination entity.Account, tr entity.Transfer) error {
+func (m manager) TransferBetweenTwoAccounts(mctx mcontext.Context, origin, destination entity.Account, tr entity.Transfer) error {
 	//Check origin ammount
-	newOriginBalance, err := checkOriginAmmount(origin.Balance, tr.Ammount)
+	newOriginBalance, err := m.CheckOriginAmmount(origin.Balance, tr.Ammount)
 	if err != nil {
 		return err
 	}
@@ -69,6 +72,9 @@ func (m manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, desti
 	db := dbconnect.InitDB()
 	defer db.Close()
 	tx, err := db.BeginTx(mctx, nil)
+	if err != nil {
+		return err
+	}
 	txc := mcontext.WithValue(mctx, "tx", tx)
 
 	//Update balance on origin account
@@ -101,7 +107,7 @@ func (m manager) transferBetweenTwoAccounts(mctx mcontext.Context, origin, desti
 	return nil
 }
 
-func checkOriginAmmount(originBalance, ammount float64) (float64, error) {
+func (m manager) CheckOriginAmmount(originBalance, ammount float64) (float64, error) {
 	if originBalance <= 0 {
 		return originBalance, errBalanceLowerThan0
 	}

@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -40,9 +39,9 @@ func (h ByIdAccountHTPP) Handler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(ac.Response())
-		return
+		if err := mhttp.WriteJsonResponse(w, ac.Response(), http.StatusOK); err != nil {
+			merrors.Handler(mctx, w, http.StatusOK, err)
+			return
+		}
 	}
 }

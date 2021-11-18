@@ -8,7 +8,7 @@ import (
 
 type LoginRequest struct {
 	Cpf    string `json:"cpf"`
-	Secret string `json:"secret`
+	Secret string `json:"secret"`
 }
 
 func (l LoginRequest) GenerateEntity() entity.LoginEntity {

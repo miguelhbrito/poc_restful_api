@@ -2,7 +2,6 @@ package login
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -36,8 +35,8 @@ func (h LoginHTPP) Handler() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			mlog.Error(mctx).Err(err).Msg("Error to decode from json")
-			merrors.Handler(mctx, w, 500, errors.New(
-				fmt.Sprintf("Error to decode from json, err:%s", err.Error())))
+			merrors.Handler(mctx, w, 500,
+				fmt.Errorf("Error to decode from json, err:%s", err.Error()))
 			return
 		}
 
@@ -56,9 +55,9 @@ func (h LoginHTPP) Handler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(token)
-		return
+		if err := mhttp.WriteJsonResponse(w, token, http.StatusOK); err != nil {
+			merrors.Handler(mctx, w, http.StatusOK, err)
+			return
+		}
 	}
 }

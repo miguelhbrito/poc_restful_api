@@ -9,8 +9,8 @@ import (
 )
 
 type TransferRequest struct {
-	AccountDestId string  `json:"accountDestId`
-	Ammount       float64 `json:"ammount`
+	AccountDestId string  `json:"accountDestId"`
+	Ammount       float64 `json:"ammount"`
 }
 
 func (t TransferRequest) GenerateEntity() entity.Transfer {

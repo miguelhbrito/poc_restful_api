@@ -1,7 +1,6 @@
 package transfers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/stone_assignment/pkg/mcontext"
@@ -36,9 +35,9 @@ func (h ListTransferHTPP) Handler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(trs.Response())
-		return
+		if err := mhttp.WriteJsonResponse(w, trs.Response(), http.StatusOK); err != nil {
+			merrors.Handler(mctx, w, http.StatusOK, err)
+			return
+		}
 	}
 }

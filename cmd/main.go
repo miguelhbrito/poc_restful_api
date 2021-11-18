@@ -37,7 +37,7 @@ func main() {
 	accountManager := accounts.NewManager(accountPostgres, authManager)
 
 	//Starting login manager
-	loginManager := login.NewManager(accountPostgres, authManager)
+	loginManager := login.NewManager(accountManager, authManager)
 
 	//Starting transfer postgres and manager
 	transferPostgres := storage.NewTransferPostgres()

@@ -15,15 +15,14 @@ import (
 	"github.com/stone_assignment/pkg/api/response"
 	"github.com/stone_assignment/pkg/mcontext"
 	"github.com/stone_assignment/pkg/merrors"
-	"github.com/stone_assignment/pkg/transfers"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateTransferHTPP_Handler(t *testing.T) {
 	tests := []struct {
 		name    string
-		manager transfers.Transfer
-		h       transfers.CreateTransferHTPP
+		manager Transfer
+		h       CreateTransferHTPP
 		body    []byte
 		request request.TransferRequest
 		want    http.HandlerFunc
@@ -99,7 +98,7 @@ func TestCreateTransferHTPP_Handler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := transfers.NewCreateTransferHTPP(tt.manager)
+			h := NewCreateTransferHTPP(tt.manager)
 
 			body, _ := json.Marshal(tt.request)
 			if tt.body != nil {

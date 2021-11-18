@@ -9,19 +9,19 @@ import (
 	"github.com/stone_assignment/pkg/storage"
 )
 
-type Manager struct {
+type manager struct {
 	accountStorage storage.Account
 	auth           auth.Auth
 }
 
 func NewManager(accountStorage storage.Account, auth auth.Auth) Account {
-	return Manager{
+	return manager{
 		accountStorage: accountStorage,
 		auth:           auth,
 	}
 }
 
-func (m Manager) Create(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
+func (m manager) Create(mctx mcontext.Context, ac entity.Account) (entity.Account, error) {
 	doc, err := brdocs.NewCpf(ac.Cpf)
 	if err != nil {
 		return entity.Account{}, err
@@ -42,7 +42,7 @@ func (m Manager) Create(mctx mcontext.Context, ac entity.Account) (entity.Accoun
 	return ac, nil
 }
 
-func (m Manager) GetById(mctx mcontext.Context, id string) (entity.Account, error) {
+func (m manager) GetById(mctx mcontext.Context, id string) (entity.Account, error) {
 	account, err := m.accountStorage.GetByIdAccount(mctx, id)
 	if err != nil {
 		return entity.Account{}, err
@@ -50,7 +50,7 @@ func (m Manager) GetById(mctx mcontext.Context, id string) (entity.Account, erro
 	return account, nil
 }
 
-func (m Manager) GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, error) {
+func (m manager) GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, error) {
 	account, err := m.accountStorage.GetByCpfAccount(mctx, cpf)
 	if err != nil {
 		return entity.Account{}, err
@@ -58,7 +58,7 @@ func (m Manager) GetByCpf(mctx mcontext.Context, cpf string) (entity.Account, er
 	return account, nil
 }
 
-func (m Manager) List(mctx mcontext.Context) (entity.Accounts, error) {
+func (m manager) List(mctx mcontext.Context) (entity.Accounts, error) {
 	accounts, err := m.accountStorage.ListAccount(mctx)
 	if err != nil {
 		return nil, err
@@ -66,10 +66,10 @@ func (m Manager) List(mctx mcontext.Context) (entity.Accounts, error) {
 	return accounts, nil
 }
 
-func (m Manager) Delete(mctx mcontext.Context, id string) error {
+func (m manager) Delete(mctx mcontext.Context, id string) error {
 	return m.accountStorage.DeleteAccount(mctx, id)
 }
 
-func (m Manager) Update(mctx mcontext.Context, ac entity.Account) error {
+func (m manager) Update(mctx mcontext.Context, ac entity.Account) error {
 	return m.accountStorage.UpdateAccount(mctx, ac)
 }

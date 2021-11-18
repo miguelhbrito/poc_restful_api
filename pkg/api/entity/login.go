@@ -2,5 +2,5 @@ package entity
 
 type LoginEntity struct {
 	Cpf    string `json:"cpf"`
-	Secret string `json:"secret`
+	Secret string `json:"secret"`
 }

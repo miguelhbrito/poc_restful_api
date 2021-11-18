@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stone_assignment/pkg/accounts"
 	"github.com/stone_assignment/pkg/api/entity"
 	"github.com/stone_assignment/pkg/api/request"
 	"github.com/stone_assignment/pkg/api/response"
@@ -21,9 +20,9 @@ import (
 
 func Test_createAccountHTPP_Handler(t *testing.T) {
 	tests := []struct {
-		manager accounts.Account
+		manager Account
 		name    string
-		h       accounts.CreateAccountHTPP
+		h       CreateAccountHTPP
 		body    []byte
 		request request.CreateAccount
 		want    http.HandlerFunc
@@ -105,7 +104,7 @@ func Test_createAccountHTPP_Handler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := accounts.NewCreateAccountHTPP(tt.manager)
+			h := NewCreateAccountHTPP(tt.manager)
 
 			body, _ := json.Marshal(tt.request)
 			if tt.body != nil {

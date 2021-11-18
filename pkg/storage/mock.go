@@ -1,4 +1,4 @@
-package tests
+package storage
 
 import (
 	"github.com/stone_assignment/pkg/api/entity"

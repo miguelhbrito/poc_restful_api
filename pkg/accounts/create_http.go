@@ -2,7 +2,6 @@ package accounts
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -36,8 +35,8 @@ func (h CreateAccountHTPP) Handler() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			mlog.Error(mctx).Err(err).Msg("Error to decode from json")
-			merrors.Handler(mctx, w, 500, errors.New(
-				fmt.Sprintf("Error to decode from json, err:%s", err.Error())))
+			merrors.Handler(mctx, w, 500,
+				fmt.Errorf("Error to decode from json, err:%s", err.Error()))
 			return
 		}
 
@@ -56,9 +55,9 @@ func (h CreateAccountHTPP) Handler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(accountResult.Response())
-		return
+		if err := mhttp.WriteJsonResponse(w, accountResult.Response(), http.StatusCreated); err != nil {
+			merrors.Handler(mctx, w, http.StatusCreated, err)
+			return
+		}
 	}
 }
