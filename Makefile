@@ -1,6 +1,7 @@
 run-server:
 	echo "running the api server"
-	./scripts/run-server.sh
+	chmod +x scripts/run-server.sh
+	sh scripts/run-server.sh
 config-up:
 	sudo docker-compose up -d
 config-down:
