@@ -1,13 +1,13 @@
 # stone_assignment
 
-An API RESTful according with https://gist.github.com/guilhermebr/fb0d5896d76634703d385a4c68b730d8
+An API RESTful according to https://gist.github.com/guilhermebr/fb0d5896d76634703d385a4c68b730d8
 
 ## 🧰 Configuration
 
 To install golang just follow the steps from website:
 - https://golang.org/doc/install
 
-Install docker and docker-compose:
+To install docker and docker-compose just follow the steps from website:
 - https://docs.docker.com/engine/install/
 - https://docs.docker.com/compose/install/
 
@@ -35,7 +35,7 @@ make config-up
 ```
 To stop database server postgresql:
 ``` powershell
-make config-up
+make config-down
 ```
 
 ## 🛠 How to use

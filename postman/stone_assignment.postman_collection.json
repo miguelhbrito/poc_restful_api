@@ -30,8 +30,8 @@
 						"method": "POST",
 						"header": [
 							{
-								"key": "x-auth",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcGYiOiIxMTgxNTQ1ODYyMyIsImV4cCI6MTYzNjk1NzkwMX0.eqXPDujWeQZyk-1PjuBzaitpC6Npg_ncmoK7NaF9ESY",
+								"key": "authorization",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
