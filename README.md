@@ -7,7 +7,7 @@ An API RESTful according to https://gist.github.com/guilhermebr/fb0d5896d7663470
 To install golang just follow the steps from website:
 - https://golang.org/doc/install
 
-Install docker and docker-compose:
+To install docker and docker-compose just follow the steps from website:
 - https://docs.docker.com/engine/install/
 - https://docs.docker.com/compose/install/
 
