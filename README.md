@@ -1,6 +1,6 @@
 # stone_assignment
 
-An API RESTful according with https://gist.github.com/guilhermebr/fb0d5896d76634703d385a4c68b730d8
+An API RESTful according to https://gist.github.com/guilhermebr/fb0d5896d76634703d385a4c68b730d8
 
 ## 🧰 Configuration
 
