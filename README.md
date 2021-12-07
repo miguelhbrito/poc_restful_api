@@ -45,6 +45,13 @@ Start application:
 make run-server
 ```
 
+##### `/accounts` POST to create a account
+##### `/accounts` GET  to list all accounts
+##### `/accounts/{account_id}/balance` GET to get the balance from an account by id
+##### `/login` POST to get login token
+##### `/transfers` POST to create a new transfers between two accounts
+##### `/transfers` GET to list all transfers
+
 - First step is create a new account to login into system
 <img src="https://github.com/miguelhbrito/stone_assignment/blob/master/images/postmanCreateAccount.png" width="620" height="365">
 
@@ -59,3 +66,5 @@ make run-server
 
 - Token is included in request's header
 <img src="https://github.com/miguelhbrito/stone_assignment/blob/master/images/postmanCreateTransferHeader.png" width="557" height="313">
+
+
