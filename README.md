@@ -48,7 +48,7 @@ make run-server
 ##### `/accounts` POST to create a account
 ##### `/accounts` GET  to list all accounts
 ##### `/accounts/{account_id}/balance` GET to get the balance from an account by id
-##### `/login` POST to get login token (to do a request to this endpoint, create an account before)
+##### `/login` POST to get login token
 ##### `/transfers` POST to create a new transfers between two accounts
 ##### `/transfers` GET to list all transfers
 
