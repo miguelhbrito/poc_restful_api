@@ -1,7 +1,5 @@
 # poc_restful_api
 
-An API RESTful according to https://gist.github.com/guilhermebr/fb0d5896d76634703d385a4c68b730d8
-
 ## 🧰 Configuration
 
 To install golang just follow the steps from website:
