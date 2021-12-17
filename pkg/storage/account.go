@@ -87,7 +87,7 @@ func (a AccountPostgres) ListAccount(mctx mcontext.Context) ([]entity.Account, e
 func (a AccountPostgres) DeleteAccount(mctx mcontext.Context, id string) error {
 	db := dbconnect.InitDB()
 	defer db.Close()
-	sqlStatement := `DELETE FROM notebook WHERE id=$1`
+	sqlStatement := `DELETE FROM account WHERE id=$1`
 	_, err := db.Exec(sqlStatement, id)
 	if err != nil {
 		mlog.Error(mctx).Err(err).Msg("Error to delete account from db")
